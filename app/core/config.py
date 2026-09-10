@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    database_url: str = "None"
     app_name: str = "SupportPilot"
     app_version: str = "0.1.0"
     environment: str = "development"
