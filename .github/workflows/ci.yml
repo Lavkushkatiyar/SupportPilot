@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+ 
       postgres:
         image: postgres:16
         env:
@@ -22,6 +23,10 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      redis:
+          image: redis:7
+          ports:
+            - 6379:6379
 
     env:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/supportpilot_test
