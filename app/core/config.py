@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    redis_url: str = "redisurl"
+    rate_limit_requests: int = 10
+    rate_limit_window_seconds: int = 60
     database_url: str = "None"
     app_name: str = "SupportPilot"
     app_version: str = "0.1.0"
