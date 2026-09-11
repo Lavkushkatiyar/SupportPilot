@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.rate_limit import rate_limit
 from app.api.v1.dependancy import get_db
 from app.core.security import create_access_token
 from app.schemas.auth import (
@@ -11,7 +12,9 @@ from app.schemas.auth import (
 )
 from app.services.auth import authenticate_user, create_user
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(
+    dependencies=[Depends(rate_limit)], prefix="/auth", tags=["Authentication"]
+)
 
 
 @router.post(
@@ -39,10 +42,7 @@ def register(
 
 
 @router.post("/login", response_model=UserLoginResponse)
-def login(
-    payload: UserLogin,
-    db: Session = Depends(get_db),
-):
+def login(payload: UserLogin, db: Session = Depends(get_db)):
     # Implement login logic here
     pass
     user = authenticate_user(
