@@ -2,10 +2,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    database_url: str = "None"
     app_name: str = "SupportPilot"
     app_version: str = "0.1.0"
     environment: str = "development"
-
+    jwt_secret_key: str = "your_secret_key"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

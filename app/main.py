@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 
+from app.api.v1.router import router as api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
 
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+app.include_router(api_router)
 
 
 @app.get("/health", tags=["Health"])
