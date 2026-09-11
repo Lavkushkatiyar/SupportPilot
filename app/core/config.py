@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    redis_url: str = "redisurl"
+    redis_url: str = "redis://localhost:6379"
     rate_limit_requests: int = 10
     rate_limit_window_seconds: int = 60
     database_url: str = "None"
