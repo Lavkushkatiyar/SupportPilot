@@ -2,124 +2,79 @@ from pathlib import Path
 
 import polars as pl
 
+from scripts.dataset.construct_conversation import ConversationBuilder
+
 DATASET_PATH = Path("data/raw/twcs.csv")
 BRAND = "AppleSupport"
+
+PROCESSED_DATA_PATH = Path("data/processed/apple_support_conversations.parquet")
 
 
 def main() -> None:
     df = pl.read_csv(DATASET_PATH)
 
-    conversation_columns = [
-        "tweet_id",
-        "author_id",
-        "inbound",
-        "created_at",
-        "text",
-        "response_tweet_id",
-        "in_response_to_tweet_id",
+    tweet_lookup = ConversationBuilder.build_tweet_lookup(df)
+
+    apple_support_tweet_ids = ConversationBuilder.get_apple_support_tweet_ids(df)
+
+    conversation_roots = ConversationBuilder.get_conversation_roots(
+        tweet_ids=apple_support_tweet_ids,
+        tweet_lookup=tweet_lookup,
+    )
+
+    print(f"AppleSupport tweets: {len(apple_support_tweet_ids)}")
+    print(f"Unique conversation roots: {len(conversation_roots)}")
+
+    child_lookup = ConversationBuilder.build_child_lookup(df)
+
+    conversations = ConversationBuilder.reconstruct_all_conversations(
+        conversation_roots=conversation_roots,
+        tweet_lookup=tweet_lookup,
+        child_lookup=child_lookup,
+    )
+
+    print(f"Reconstructed conversations: {len(conversations)}")
+
+    conversation_lengths = [len(conversation) for conversation in conversations]
+
+    print(f"Shortest conversation: {min(conversation_lengths)} turns")
+    print(f"Longest conversation: {max(conversation_lengths)} turns")
+    print(
+        f"Average conversation length: "
+        f"{sum(conversation_lengths) / len(conversation_lengths):.2f} turns"
+    )
+
+    valid_conversations = [
+        conversation
+        for conversation in conversations
+        if ConversationBuilder.is_valid_conversation(
+            conversation,
+            BRAND,
+        )
     ]
 
-    # AppleSupport tweets
-    apple_support = df.filter(pl.col("author_id") == BRAND).select(conversation_columns)
+    print(f"Total conversations: {len(conversations)}")
+    print(f"Valid conversations: {len(valid_conversations)}")
 
-    # All tweets used as a lookup table for parent relationships
-    tweets = df.select(conversation_columns)
+    processed_df = ConversationBuilder.flatten_conversations(valid_conversations)
 
-    # Attach the parent tweet to each AppleSupport tweet
-    apple_support_with_parent = apple_support.join(
-        tweets,
-        left_on="in_response_to_tweet_id",
-        right_on="tweet_id",
-        how="left",
-        suffix="_parent",
-    )
-    print(
-        f" parent tweet to each AppleSupport tweet: {apple_support_with_parent.height}"
-    )
-    # Build the complete reply graph: parent -> child
-    reply_edges = df.filter(pl.col("in_response_to_tweet_id").is_not_null()).select(
-        [
-            pl.col("in_response_to_tweet_id").alias("parent_tweet_id"),
-            pl.col("tweet_id").alias("child_tweet_id"),
-        ]
+    print(processed_df.head())
+    print(f"Processed rows: {processed_df.height}")
+    print(f"Processed conversations: {processed_df['conversation_id'].n_unique()}")
+    processed_df = ConversationBuilder.flatten_conversations(valid_conversations)
+    PROCESSED_DATA_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
     )
 
-    # Keep only edges where AppleSupport is the child
-    apple_support_edges = (
-        reply_edges.join(
-            df.select(
-                [
-                    pl.col("tweet_id"),
-                    pl.col("author_id"),
-                    pl.col("inbound"),
-                ]
-            ),
-            left_on="child_tweet_id",
-            right_on="tweet_id",
-            how="inner",
-        )
-        .filter(pl.col("author_id") == BRAND)
-        .select(
-            [
-                "parent_tweet_id",
-                "child_tweet_id",
-            ]
-        )
-    )
+    processed_df.write_parquet(PROCESSED_DATA_PATH)
 
-    # Find tweets that directly reply to AppleSupport
-    apple_support_continuations = reply_edges.join(
-        apple_support.select("tweet_id"),
-        left_on="parent_tweet_id",
-        right_on="tweet_id",
-        how="inner",
-    )
+    print(f"Processed dataset saved to: {PROCESSED_DATA_PATH}")
+    loaded_df = pl.read_parquet(PROCESSED_DATA_PATH)
 
-    print(f"Tweets replying to AppleSupport: {apple_support_continuations.height}")
+    print(f"Loaded rows: {loaded_df.height}")
 
-    # Validate the direction of those replies
-    apple_support_continuations_with_author = apple_support_continuations.join(
-        df.select(
-            [
-                pl.col("tweet_id"),
-                pl.col("author_id"),
-                pl.col("inbound"),
-                pl.col("text"),
-            ]
-        ),
-        left_on="child_tweet_id",
-        right_on="tweet_id",
-        how="inner",
-    )
-
-    print("\nReplies to AppleSupport by direction:")
-    print(apple_support_continuations_with_author.group_by("inbound").len())
-
-    # Find the next level of conversation after an AppleSupport reply
-    conversation_edges = apple_support_edges.join(
-        reply_edges,
-        left_on="child_tweet_id",
-        right_on="parent_tweet_id",
-        how="left",
-        suffix="_next",
-    )
-
-    # Validate the direction of those continuations
-    conversation_continuations = conversation_edges.join(
-        df.select(
-            [
-                pl.col("tweet_id"),
-                pl.col("author_id"),
-                pl.col("inbound"),
-            ]
-        ),
-        left_on="child_tweet_id_next",
-        right_on="tweet_id",
-        how="inner",
-    )
-
-    print("\nAppleSupport conversation continuation directions:")
-    print(conversation_continuations.group_by("inbound").len())
+    print(f"Loaded conversations: {loaded_df['conversation_id'].n_unique()}")
 
 
 if __name__ == "__main__":
