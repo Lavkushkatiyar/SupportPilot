@@ -4,7 +4,7 @@ from alembic import context
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
-from app.models import Conversation, Message, User  # noqa: F401
+from app.models import Conversation, HistoricalCase, Message, User  # noqa: F401
 
 config = context.config
 
