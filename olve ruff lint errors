@@ -1,0 +1,241 @@
+[33mcommit 3b8d24dc3e4a39f8436252270affc2a8676ca0e2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/intent_classification[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/feature/intent_classification[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Merge: f8346fe 151521f
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Tue Sep 15 00:30:48 2026 +0530
+
+    Merge pull request #6 from Lavkushkatiyar/feature/database-infrastructure
+    
+    Feature/database infrastructure
+
+[33mcommit 151521fa70b026c3fd38d27ab6ab743876176d5e[m[33m ([m[1;31morigin/feature/database-infrastructure[m[33m, [m[1;32mfeature/database-infrastructure[m[33m)[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Tue Sep 15 00:26:18 2026 +0530
+
+    abort : wrote but will fix the load to db further
+
+[33mcommit c4c7f3d0b055843c43091c38be595b60647e9c67[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Mon Sep 14 02:47:13 2026 +0530
+
+    feat: add historical case persistence model
+
+[33mcommit 9c3244dbda266578dff4f54d6b748566e9f96950[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Mon Sep 14 02:33:26 2026 +0530
+
+    feat: add message persistence model
+
+[33mcommit 6ac38f44d85a8cc7a1409eec31dbf25a747c854b[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Mon Sep 14 02:07:22 2026 +0530
+
+    feat: add conversation persistence model
+
+[33mcommit f8346fe51a273d809d7414a8bfe3875544bcba53[m
+Merge: a97c02f bcc8610
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Mon Sep 14 00:44:16 2026 +0530
+
+    Merge pull request #5 from Lavkushkatiyar/feature/conversation-processing
+    
+    Feature/conversation processing
+
+[33mcommit bcc8610ff3c3d1419a4fd4ebff768bc65acaf87d[m[33m ([m[1;31morigin/feature/conversation-processing[m[33m, [m[1;32mfeature/conversation-processing[m[33m)[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Mon Sep 14 00:42:17 2026 +0530
+
+    feat: implement AppleSupport conversation processing pipeline
+    
+    Reconstruct customer-support conversations from the Customer Support on Twitter dataset using tweet parent relationships. Add ConversationBuilder functionality for tweet lookup, AppleSupport tweet selection, root discovery, parent-to-child traversal, conversation reconstruction, validation, and flattening. Add unit tests covering conversation reconstruction, root discovery, child lookup, validation, and flattening. Process the AppleSupport dataset into a validated conversational dataset containing conversation IDs, turn indices, tweet metadata, direction, timestamps, and message text. Materialize the processed dataset as Parquet while keeping raw data immutable and generated artifacts separate from repository source code. Preserve the dataset exploration work used to validate reply direction and conversation reconstruction assumptions.
+
+[33mcommit eb6b57537256b2df38b3b321d63430f2868d6dd4[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sun Sep 13 17:47:55 2026 +0530
+
+    docs: validate conversation relationships for AppleSupport
+
+[33mcommit a97c02fcc35fd47472fb2b4e1507086f42124341[m
+Merge: b9f251e 3d4a270
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Sun Sep 13 03:21:20 2026 +0530
+
+    Merge pull request #4 from Lavkushkatiyar/feature/dataset-exploration
+    
+    docs: record dataset exploration findings
+
+[33mcommit 3d4a27050c7cc61bf475e7478aaabf851d306e14[m[33m ([m[1;31morigin/feature/dataset-exploration[m[33m, [m[1;32mfeature/dataset-exploration[m[33m)[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sun Sep 13 03:11:50 2026 +0530
+
+    docs: record dataset exploration findings
+
+[33mcommit b9f251e4800d922cab7e2c86ad243baebd8adf5b[m
+Merge: eb43ae5 99e7235
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Sat Sep 12 03:47:54 2026 +0530
+
+    Merge pull request #3 from Lavkushkatiyar/feature/rate-limiting
+    
+    Feature/rate limiting
+
+[33mcommit 99e723509c7184f3be33efad3f534d6ef728e9c9[m[33m ([m[1;31morigin/feature/rate-limiting[m[33m, [m[1;32mfeature/rate-limiting[m[33m)[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 03:45:04 2026 +0530
+
+    fix adds redis service in CI
+
+[33mcommit 491cdbc2ccf16bfd25d0ae5a9333c8e52834702e[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 03:35:57 2026 +0530
+
+    fix - some CI convention fixed in config
+
+[33mcommit 838f5699c16f36b48ca34ba19e953b66498bff8e[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 03:31:25 2026 +0530
+
+    fix - removed some test suite
+
+[33mcommit 2c2f760e6fe338f3b11def58ca562141c0b71e8f[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 03:30:29 2026 +0530
+
+    test: add rate limiting and authentication API coverage
+    
+    Add reusable Bruno requests for authentication API verification and commit automated rate limiter service tests.
+
+[33mcommit 824fec3a4f4050479eb517ca591ba39b485916a9[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 03:15:39 2026 +0530
+
+    test: add Bruno API collection
+    
+    Add reusable Bruno requests for authentication and rate-limit API verification.
+
+[33mcommit 47391a416170418c7a8480cb9df3d848064e5274[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 02:50:38 2026 +0530
+
+    feat: add API rate limiting
+    
+    Add Redis-backed fixed-window rate limiting with configurable request limits and expiration windows. Integrate the limiter with the authentication router and return HTTP 429 responses when the configured limit is exceeded.
+
+[33mcommit 6d1df04fd3eaf673fb8d65d474b8a4acfb35c38b[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 02:36:50 2026 +0530
+
+    feat: add Redis rate limiter
+
+[33mcommit eb43ae5bf7e23ff8ae7ad14126b5301f0ea9cbcf[m
+Merge: 8b57d4a cf9ea82
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Sat Sep 12 02:13:20 2026 +0530
+
+    Merge pull request #2 from Lavkushkatiyar/feature/authentication
+    
+    Feature/authentication
+
+[33mcommit cf9ea821b2ecea829effc4f17c392fcc15144b60[m[33m ([m[1;31morigin/feature/authentication[m[33m, [m[1;32mfeature/authentication[m[33m)[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 02:08:38 2026 +0530
+
+    feat: complete authentication foundation
+    
+    Implement user registration, secure password hashing, JWT access-token authentication, login, and reusable current-user validation.
+
+[33mcommit 6267ca446471339b0f8d78f01017a60da31a5bde[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 01:38:04 2026 +0530
+
+    feat: add JWT access token support
+    
+    Add configurable JWT signing settings and access-token creation and decoding using HS256. Include token subject, token type, issued-at, and expiration claims, with unit coverage for valid and invalid token handling.
+
+[33mcommit 80b2ed8c26f5c89783cf01905cade6b558694536[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 01:23:45 2026 +0530
+
+    changes ci to have postgrees
+
+[33mcommit 705e404983aecba0a443945e9679adec8033ccb7[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Sat Sep 12 00:59:01 2026 +0530
+
+    feat: add user registration
+    
+    Add registration schemas, database session dependency, and authentication service for creating users with securely hashed passwords. Expose the versioned registration endpoint with input validation, duplicate-user handling, and a safe response model that never exposes password hashes.
+
+[33mcommit 3326d3ed0b03601a1147a856d54255932b02e3ee[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Fri Sep 11 03:45:45 2026 +0530
+
+    feat: add secure password hashing
+    
+    Add a centralized password hashing service using pwdlib's recommended password hashing configuration. Expose password hashing and verification through the application security layer and add unit tests covering successful and failed password verification.
+
+[33mcommit df587fc32468f99297c398b818f750bdac8ae0af[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Fri Sep 11 03:35:17 2026 +0530
+
+    feat: add user persistence schema
+    
+    Define the User SQLAlchemy model with a unique login email, password hash, and creation timestamp. Configure Alembic to load application metadata and generate the users table migration. Add database integration coverage for the application connection and migrated users table.
+
+[33mcommit 247cf3cd5a59c86b03aeeedc5c54e2210f6937b4[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Fri Sep 11 03:11:28 2026 +0530
+
+    feat: establish database foundation for authentication
+    
+    Add PostgreSQL configuration through pydantic-settings, initialize the SQLAlchemy Base and session infrastructure, and configure pytest to resolve the application package from the project root. Add an integration test that verifies the application can establish a connection to the SupportPilot PostgreSQL database.
+
+[33mcommit 8b57d4a3478796bf910555849d4788b816ad9bb5[m
+Merge: c2b3fa2 8d41bb1
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Fri Sep 11 02:25:19 2026 +0530
+
+    Merge pull request #1 from Lavkushkatiyar/feature/project-foundation
+    
+    Feature/project foundation
+
+[33mcommit 8d41bb1b9e97bd6dbe8dbaf0b65a94bec9984961[m[33m ([m[1;31morigin/feature/project-foundation[m[33m, [m[1;32mfeature/project-foundation[m[33m)[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Fri Sep 11 02:14:38 2026 +0530
+
+    chore: establish development quality gates
+
+[33mcommit bc7aa3e33531dc06349dac695fa548d0232bd6ff[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Thu Sep 10 02:47:15 2026 +0530
+
+    test: add health and readiness endpoint tests
+
+[33mcommit 9484f26ca97757f573d8cd05c3b7322fc117032f[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Thu Sep 10 02:46:47 2026 +0530
+
+    chore: configure application logging
+
+[33mcommit 8a542fd0d8cac82f95cbc0cc83793a93e8dc1081[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Thu Sep 10 02:31:55 2026 +0530
+
+    feat : adds health and ready checkpoint and tests with swagger
+
+[33mcommit 0fff8ccb68ab1e8a9d2be5e5d2ef40dadef6e9cc[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Thu Sep 10 02:26:52 2026 +0530
+
+    feat: establish project foundation
+
+[33mcommit f501a19c3787c834c0978936141e5a265017e6a7[m
+Author: Lavkush Katiyar <lkatiyar12@gmail.com>
+Date:   Thu Sep 10 02:19:09 2026 +0530
+
+    creates simple project structure and add fastapi dependencies and app
+
+[33mcommit c2b3fa223c132054de8efab523931b9820dd961f[m
+Author: LAVKUSH KATIYAR <139652861+Lavkushkatiyar@users.noreply.github.com>
+Date:   Thu Sep 10 01:51:00 2026 +0530
+
+    Initial commit
