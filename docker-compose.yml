@@ -4,3 +4,18 @@ services:
     container_name: supportpilot-redis
     ports:
       - "6379:6379"
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: supportpilot-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: supportpilot
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
