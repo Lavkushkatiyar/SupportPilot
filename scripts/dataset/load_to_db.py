@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from uuid import uuid4
 
 import polars as pl
 from sqlalchemy import text
@@ -33,22 +34,21 @@ def load_dataset(dataset_path: Path, limit: int) -> pl.DataFrame:
 def insert_data(df: pl.DataFrame) -> None:
     records = df.to_dicts()
 
-    conversations = (
-        df.select("conversation_id")
-        .unique()
-        .rename({"conversation_id": "source_id"})
-        .to_dicts()
-    )
+    conversations = [
+        {
+            "id": uuid4(),
+            "source_id": source_id,
+        }
+        for source_id in df["conversation_id"].unique().to_list()
+    ]
 
     with SessionLocal.begin() as session:
         session.execute(
-            text(
-                """
-                INSERT INTO conversations (source_id, created_at)
-                VALUES (:source_id, CURRENT_TIMESTAMP)
+            text("""
+                INSERT INTO conversations (id, source_id, created_at)
+                VALUES (:id, :source_id, CURRENT_TIMESTAMP)
                 ON CONFLICT (source_id) DO NOTHING
-                """
-            ),
+            """),
             conversations,
         )
 
@@ -71,6 +71,7 @@ def insert_data(df: pl.DataFrame) -> None:
 
         messages = [
             {
+                "id": uuid4(),
                 "conversation_id": id_by_source[record["conversation_id"]],
                 "tweet_id": record["tweet_id"],
                 "author_id": record["author_id"],
@@ -86,6 +87,7 @@ def insert_data(df: pl.DataFrame) -> None:
             text(
                 """
                 INSERT INTO messages (
+                    id, 
                     conversation_id,
                     tweet_id,
                     author_id,
@@ -95,6 +97,7 @@ def insert_data(df: pl.DataFrame) -> None:
                     text
                 )
                 VALUES (
+                    :id,
                     :conversation_id,
                     :tweet_id,
                     :author_id,
