@@ -1,4 +1,0 @@
- M docker-compose.yml
- D "olve ruff lint errors\357\200\242"
-?? failed.txt
-?? scripts/evaluation/

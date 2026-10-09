@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -20,7 +20,7 @@ class Message(Base):
         nullable=False,
     )
     tweet_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
-    author_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    author_id: Mapped[str] = mapped_column(String(255), nullable=False)
     turn_index: Mapped[int] = mapped_column(Integer, nullable=False)
     inbound: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
