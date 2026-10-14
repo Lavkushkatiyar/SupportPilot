@@ -11,6 +11,10 @@ case "${1:-server}" in
   db-shell)
     docker exec -it supportpilot-postgres psql -U postgres -d supportpilot    ;;
 
+  lint-fix)
+  ruff check . --fix
+  ruff format . ;;
+
   *)
     echo "Usage: ./dev.sh [server|infra-up]"
     exit 1
