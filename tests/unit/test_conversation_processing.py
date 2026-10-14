@@ -1,6 +1,6 @@
 import polars as pl
 
-from scripts.dataset.construct_conversation import ConversationBuilder
+from scripts.dataset.processing.construct_conversation import ConversationBuilder
 
 
 def test_reconstruct_conversation():
