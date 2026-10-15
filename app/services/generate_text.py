@@ -35,7 +35,6 @@ class LLMService:
         )
 
     def generate_completion(self, message: list[dict[str, str]]) -> str:
-        print(message)
         if not message:
             raise ValueError("message is empty")
         payload = {"model": self.model, "messages": message}
