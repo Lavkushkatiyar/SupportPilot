@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -7,6 +6,7 @@ on:
 
 jobs:
   quality:
+    name: Test and Quality Checks
     runs-on: ubuntu-latest
 
     services:
@@ -37,6 +37,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/supportpilot_test
       REDIS_URL: redis://localhost:6379/0
+      PYTHONUNBUFFERED: "1"
 
     steps:
       - name: Checkout repository
@@ -51,11 +52,38 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --locked
+        run: uv sync --locked --group dev
 
-      - name: Apply latest database migrations
+      - name: Verify Python and dependency setup
+        run: |
+          uv run python --version
+          uv run python -c "import sqlalchemy, psycopg; print('Database dependencies imported successfully')"
+          uv run python -c "import redis; print('Redis dependency imported successfully')"
+
+      - name: Verify database connection
+        run: |
+          uv run python -c "from sqlalchemy import create_engine; import os; engine = create_engine(os.environ['DATABASE_URL']); connection = engine.connect(); print('PostgreSQL connection successful'); connection.close(); engine.dispose()"
+
+      - name: Apply database migrations
         run: uv run alembic upgrade head
 
+      - name: Generate synthetic CI dataset
+        run: uv run python -m scripts.db_load.create_ci_dataset
+
+      - name: Load main dataset
+        run: uv run python -m scripts.db_load.load_to_db --dataset data/ci/synthetic_conversations.parquet --limit 1000
+
+      - name: Load historical cases
+        run: uv run python -m scripts.db_load.historical_case
+
+      - name: Backfill embeddings
+        run: uv run python -m scripts.db_load.backfill_embeddings
+
+
+      - name: Run tests
+        run: >-
+          uv run pytest -v
+          --ignore=tests/unit/services/test_retrieval.py
 
       - name: Check lint
         run: uv run ruff check .
