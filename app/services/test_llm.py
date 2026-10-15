@@ -28,9 +28,7 @@ def main() -> None:
             },
             {
                 "role": "user",
-                "content": (
-                    "My phone battery drains quickly after an update. Can you help me?"
-                ),
+                "content": ("My spotify is not opening after update. Can you help me?"),
             },
         ],
     }
