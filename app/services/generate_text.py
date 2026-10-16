@@ -7,7 +7,7 @@ load_dotenv()
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 OLLAMA_URL = "http://localhost:11434/api/chat"
-REQUEST_TIMEOUT_SECONDS = 60
+REQUEST_TIMEOUT_SECONDS = 120
 
 
 class LLMService:
@@ -22,7 +22,8 @@ class LLMService:
         self.provider = (provider or os.getenv("LLM_PROVIDER", "openrouter")).lower()
 
         if self.provider == "ollama":
-            self.model = model or os.getenv("OLLAMA_MODEL", "qwen3:4b")
+            self.model = model or os.getenv("OLLAMA_MODEL", "qwen3:8b")
+            print(self.model)
             self.api_key = None
         elif self.provider == "openrouter":
             self.model = model or os.getenv("OPENROUTER_MODEL")

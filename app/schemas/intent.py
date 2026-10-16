@@ -14,6 +14,7 @@ class IntentLabel(StrEnum):
     CONNECTIVITY_AND_COMMUNICATION = "connectivity_and_communication"
     SETTINGS_AND_HOW_TO = "settings_and_how_to"
     UNKNOWN_OR_INSUFFICIENT_CONTEXT = "unknown_or_insufficient_context"
+    OTHER_OR_OUT_OF_SCOPE = "other_or_out_of_scope"
 
 
 class IntentClassification(BaseModel):

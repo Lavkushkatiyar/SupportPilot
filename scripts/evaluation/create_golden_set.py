@@ -13,7 +13,7 @@ DIFFICULT_SAMPLES = 30
 
 ROOT = Path(__file__).resolve().parents[2]
 INPUT_PATH = ROOT / "data/processed/apple_support_conversations.parquet"
-OUTPUT_PATH = ROOT / "data/golden/golden_set_annotations.csv"
+OUTPUT_PATH = ROOT / "data/evaluation/golden_set_annotations.csv"
 
 INTENT_KEYWORDS = {
     "software_update_issue": (r"\b(ios|macos|update|updating|upgrade|downgrade)\b"),
