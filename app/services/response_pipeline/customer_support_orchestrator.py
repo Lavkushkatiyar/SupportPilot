@@ -2,9 +2,11 @@ from sqlalchemy.orm import Session
 
 from app.schemas.customer_support_orchestrator import OrchestratorResponse
 from app.schemas.escalation import EscalationAction
-from app.services.customer_response_generator import CustomerResponseGenerator
-from app.services.escalation_service import EscalationService
-from app.services.intent_classifier import IntentClassifier
+from app.services.ai.intent_classifier import IntentClassifier
+from app.services.response_pipeline.customer_response_generator import (
+    CustomerResponseGenerator,
+)
+from app.services.response_pipeline.escalation_service import EscalationService
 
 
 class CustomerSupportOrchestrator:

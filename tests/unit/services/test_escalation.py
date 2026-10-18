@@ -7,7 +7,7 @@ from app.schemas.escalation import (
     RiskLevel,
 )
 from app.schemas.intent import IntentClassification, IntentLabel
-from app.services.escalation_service import EscalationService
+from app.services.response_pipeline.escalation_service import EscalationService
 
 
 def test_unknown_intent_escalates_with_medium_risk() -> None:

@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from app.db.session import SessionLocal
 from app.models.historical_case import HistoricalCase
-from app.services.embeddings import EmbeddingServices
+from app.services.retrieval.embeddings import EmbeddingServices
 
 
 def test_generate_embeddings() -> None:

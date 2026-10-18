@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-from app.services.intent_classifier import IntentClassifier
+from app.services.ai.intent_classifier import IntentClassifier
 
 ROOT = Path(__file__).resolve().parents[2]
 

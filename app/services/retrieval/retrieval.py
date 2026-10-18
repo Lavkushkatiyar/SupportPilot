@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.historical_case import HistoricalCase
-from app.services.embeddings import EmbeddingServices
+from app.services.retrieval.embeddings import EmbeddingServices
 
 
 class RetrievalServices:
