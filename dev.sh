@@ -16,7 +16,7 @@ case "${1:-server}" in
   ruff format . ;;
 
   *)
-    echo "Usage: ./dev.sh [server|infra-up]"
+    echo "Usage: ./dev.sh [infra|server ]"
     exit 1
     ;;
 esac    
