@@ -8,12 +8,28 @@ PREDICTIONS_PATH = ROOT / "data/evaluation/intent_predictions.csv"
 GOLDEN_SET_PATH = ROOT / "data/evaluation/golden_set_annotations_v3.csv"
 MISMATCHES_PATH = ROOT / "data/evaluation/prediction_mismatches.csv"
 
+UNKNOWN_LABELS = {
+    "unknown_insufficient_context",
+    "unknown_or_insufficient_context",
+    "other_or_out_of_scope",
+}
+
+COMBINED_LABEL = "unknown_or_out_of_scope"
+
+
+def normalize_label(column: str) -> pl.Expr:
+    """Normalize legacy labels and merge unknown/out-of-scope."""
+    return (
+        pl.when(pl.col(column).is_in(list(UNKNOWN_LABELS)))
+        .then(pl.lit(COMBINED_LABEL))
+        .otherwise(pl.col(column))
+    )
+
 
 def main():
     predictions = pl.read_csv(PREDICTIONS_PATH)
     golden_set = pl.read_csv(GOLDEN_SET_PATH)
 
-    # Keep the human annotation and its notes alongside the model prediction.
     golden_columns = [
         "tweet_id",
         "text",
@@ -27,29 +43,32 @@ def main():
         [column for column in golden_columns if column in golden_set.columns]
     )
 
-    results = predictions.join(golden_set, on="tweet_id", how="left")
-
-    # Normalize the legacy label if it appears in either file.
-    results = results.with_columns(
-        pl.col("expected_intent")
-        .replace({"unknown_insufficient_context": "unknown_or_insufficient_context"})
-        .alias("expected_intent"),
-        pl.col("intent")
-        .replace({"unknown_insufficient_context": "unknown_or_insufficient_context"})
-        .alias("intent"),
+    results = predictions.join(
+        golden_set,
+        on="tweet_id",
+        how="left",
     )
 
-    # Compare the model prediction against the V2 human annotation.
+    results = results.with_columns(
+        normalize_label("intent").alias("golden_set_intent"),
+        normalize_label("predicted_intent").alias("classifier_intent"),
+    )
+
+    valid_results = results.filter(
+        pl.col("golden_set_intent").is_not_null()
+        & pl.col("classifier_intent").is_not_null()
+    )
+
     mismatches = (
-        results.filter(pl.col("predicted_intent") != pl.col("intent"))
+        valid_results.filter(pl.col("golden_set_intent") != pl.col("classifier_intent"))
         .select(
             "tweet_id",
             "text",
-            pl.col("intent").alias("golden_set_intent"),
+            "golden_set_intent",
             "annotation_rationale",
             "annotation_confidence",
             "review_status",
-            pl.col("predicted_intent").alias("classifier_intent"),
+            "classifier_intent",
             "confidence",
             "rationale",
         )
@@ -59,15 +78,17 @@ def main():
     MISMATCHES_PATH.parent.mkdir(parents=True, exist_ok=True)
     mismatches.write_csv(MISMATCHES_PATH)
 
-    total = results.height
-    correct = results.filter(pl.col("predicted_intent") == pl.col("intent")).height
+    total = valid_results.height
+    correct = total - mismatches.height
 
-    print(f"Total messages: {total}")
-    print(f"Exact matches: {correct}")
-    print(f"Mismatches: {mismatches.height}")
+    print(f"Total prediction rows: {predictions.height}")
+    print(f"Rows with valid labels: {total}")
+    print(f"Rows excluded from scoring: {results.height - total}")
+    print(f"Correct after combining categories: {correct}")
+    print(f"Remaining mismatches: {mismatches.height}")
 
     if total:
-        print(f"Exact-match accuracy: {correct / total:.1%}")
+        print(f"Combined-category accuracy: {correct / total:.1%}")
 
     print(f"Mismatch file saved to: {MISMATCHES_PATH}")
 
