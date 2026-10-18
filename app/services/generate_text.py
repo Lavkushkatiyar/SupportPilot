@@ -73,7 +73,7 @@ class LLMService:
     ) -> str:
         if not message:
             raise ValueError("message is empty")
-
+        payload = {}
         if self.provider == "ollama":
             payload = {
                 "model": self.model,
@@ -84,16 +84,10 @@ class LLMService:
                 "keep_alive": "30m",
                 "options": {
                     "temperature": 0,
+                    "num_ctx": 8192,
                 },
             }
-            url = OLLAMA_URL
-        else:
-            payload = {
-                "model": self.model,
-                "messages": message,
-            }
-            url = OPENROUTER_URL
-
+        url = OLLAMA_URL
         try:
             response = self.session.post(
                 url,
