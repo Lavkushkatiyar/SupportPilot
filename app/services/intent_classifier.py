@@ -21,24 +21,43 @@ SYSTEM_PROMPT = f"""
     Use for:
     - Installing, downloading, upgrading, or rolling back iOS/macOS.
     - OS updates that fail or do not complete.
-    - Regressions the customer explicitly associates with an OS update.
-    - Informal complaints clearly focused on an OS update.
+    - Problems explicitly attributed to an OS update, when the update-related
+      regression is the primary complaint.
+    - Multiple system-level regressions explicitly attributed to an OS update.
 
-    IMPORTANT UPDATE RULE:
-    If the customer says a problem started, appeared, became worse, or continued
-    since an OS update, and the update-related regression is the primary complaint,
-    choose software_update_issue.
-    Do not require technical proof that the update caused it.
+    BATTERY-RELATED UPDATE BOUNDARY:
+    If the customer asks whether an update caused battery drain but does not
+    assert that it did, choose battery_and_charging.
 
-    However, merely mentioning an OS version or saying an update was installed
-    does NOT make the issue an update issue. If the update is incidental and the
-    problem is otherwise identifiable, classify the actual problem.
+    If the customer reports battery drain after an update without explicitly
+    blaming the update, choose battery_and_charging.
+
+    If the customer explicitly blames the update for battery drain and presents
+    the update regression as the complaint, choose software_update_issue.
+
+    If multiple system problems are explicitly attributed to an update, choose
+    software_update_issue.
+
+    Mentioning an update, asking about its possible role, or describing timing
+    alone does not establish causation.
 
     2. battery_and_charging
-    Use for battery drain, battery health, unexpected battery percentages,
-    charging failures, chargers, and charging accessories.
-    Exception: choose software_update_issue when the customer explicitly frames
-    the battery problem as a regression following an OS update.
+    Use for:
+    - Rapid battery drain or reduced battery life.
+    - Battery health or unexpected battery percentages.
+    - Charging failures, chargers, and charging accessories.
+
+    Choose battery_and_charging when battery or charging performance is the
+    primary identifiable problem and the message does not explicitly attribute
+    it to an OS update as the primary complaint.
+
+    If the customer explicitly attributes battery problems to an OS update and
+    frames the update-related regression as the main complaint, choose
+    software_update_issue instead.
+
+    Do not classify a message as battery_and_charging merely because it mentions
+    a battery symptom when the main complaint is a broader, explicitly
+    update-related system regression.
 
     3. device_hardware_issue
     Use for identifiable physical damage or hardware malfunction, such as a
@@ -126,6 +145,32 @@ SYSTEM_PROMPT = f"""
     included in the input.
 
     EXAMPLES
+    
+    Message: "My battery drains quickly. I installed iOS 11 last month."
+    Intent: battery_and_charging
+    Reason: The update is mentioned, but the customer does not attribute the
+    battery problem to it.
+
+    Message: "My battery has been draining quickly since the last update."
+    Intent: battery_and_charging
+    Reason: The message describes timing after an update but does not explicitly
+    identify the update as the cause.
+
+    Message: "iOS 11.1 is causing massive battery drain.Apple needs to fix this update"
+    Intent: software_update_issue
+    Reason: The customer explicitly attributes the battery problem to the update
+    and asks for the update-related regression to be fixed.
+
+    Message: "Since installing iOS 11, my battery drains quickly."
+    Intent: battery_and_charging
+    Reason: The customer establishes timing but does not explicitly attribute
+    the battery problem to the update.
+
+    Message: "The latest iOS update caused battery drain, repeated reboots,
+    and my camera stopped working."
+    Intent: software_update_issue
+    Reason: Multiple system-level failures are explicitly attributed to the update.
+
 
     Message: "Ever since updating, my phone keeps freezing."
     Intent: software_update_issue
@@ -179,6 +224,7 @@ class IntentClassifier:
         self.llm_service = LLMService()
 
     def classify(self, customer_message: str) -> IntentClassification:
+        print(customer_message)
         messages = [
             {
                 "role": "system",
