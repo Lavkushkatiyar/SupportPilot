@@ -12,8 +12,11 @@ MULTI_INTENT_SAMPLES = 40
 DIFFICULT_SAMPLES = 30
 
 ROOT = Path(__file__).resolve().parents[2]
+
 INPUT_PATH = ROOT / "data/processed/apple_support_conversations.parquet"
-OUTPUT_PATH = ROOT / "data/evaluation/golden_set_annotations.csv"
+
+# Keep the existing annotated golden set safe.
+OUTPUT_PATH = ROOT / "data/evaluation/golden_set_candidates_v2.csv"
 
 INTENT_KEYWORDS = {
     "software_update_issue": (r"\b(ios|macos|update|updating|upgrade|downgrade)\b"),
@@ -25,7 +28,6 @@ INTENT_KEYWORDS = {
     "apple_id_account_security": (
         r"\b(apple id|password|account|locked out|hacked|login)\b"
     ),
-    "app_or_media_issue": (r"\b(app|song|music|itunes|email|spotify|video)\b"),
     "app_store_purchase_billing": (
         r"\b(app store|refund|purchase|subscription|billing|payment)\b"
     ),
@@ -33,6 +35,10 @@ INTENT_KEYWORDS = {
         r"\b(wifi|wi-fi|bluetooth|cellular|imessage|facetime|calls)\b"
     ),
     "settings_and_how_to": (r"\b(settings|how to|how do i|configure|enable|disable)\b"),
+    "other_or_out_of_scope": (
+        r"\b(shipping|delivery|stock|return policy|repair status|"
+        r"support agent|wait time|customer service)\b"
+    ),
 }
 
 PATTERNS = {
@@ -40,21 +46,24 @@ PATTERNS = {
     for intent, pattern in INTENT_KEYWORDS.items()
 }
 
+FIELDS = [
+    "tweet_id",
+    "conversation_id",
+    "turn_index",
+    "created_at",
+    "text",
+    "sampling_group",
+    "candidate_intents",
+    "intent",
+    "annotation_notes",
+    "escalation_decision",
+    "escalation_reason",
+]
 
-def find_intents(text: str) -> list[str]:
-    intents = []
 
-    for intent, pattern in PATTERNS.items():
-        if pattern.search(text):
-            intents.append(intent)
-
-    return intents
-
-
-def main() -> None:
-    rng = random.Random(SEED)
-
-    messages = (
+def load_messages() -> list[dict]:
+    """Load valid inbound messages and remove duplicate tweet IDs."""
+    return (
         pl.read_parquet(INPUT_PATH)
         .filter(pl.col("inbound") & pl.col("text").is_not_null())
         .filter(pl.col("text").str.strip_chars().str.len_chars() > 0)
@@ -69,99 +78,133 @@ def main() -> None:
         .to_dicts()
     )
 
+
+def find_intents(text: str) -> list[str]:
+    """Find keyword-based candidate intents; these are not final labels."""
+    return [intent for intent, pattern in PATTERNS.items() if pattern.search(text)]
+
+
+def prepare_messages(messages: list[dict]) -> list[dict]:
+    """Attach candidate-intent hints to every message."""
     for message in messages:
         message["candidate_intents"] = find_intents(message["text"])
 
+    return messages
+
+
+def create_candidate_row(message: dict, group: str) -> dict:
+    """Create an unannotated golden-set candidate row."""
+    return {
+        "tweet_id": message["tweet_id"],
+        "conversation_id": message["conversation_id"],
+        "turn_index": message["turn_index"],
+        "created_at": message["created_at"],
+        "text": message["text"],
+        "sampling_group": group,
+        "candidate_intents": "|".join(message["candidate_intents"]),
+        "intent": "",
+        "annotation_notes": "",
+        "escalation_decision": "",
+        "escalation_reason": "",
+    }
+
+
+def add_samples(
+    candidates: list[dict],
+    count: int,
+    group: str,
+    selected: list[dict],
+    selected_tweet_ids: set,
+    selected_conversation_ids: set,
+) -> int:
+    """Add unique messages without selecting multiple turns per conversation."""
+    added = 0
+
+    for message in candidates:
+        tweet_id = message["tweet_id"]
+        conversation_id = message["conversation_id"]
+
+        if tweet_id in selected_tweet_ids:
+            continue
+
+        if conversation_id in selected_conversation_ids:
+            continue
+
+        selected_tweet_ids.add(tweet_id)
+        selected_conversation_ids.add(conversation_id)
+        selected.append(create_candidate_row(message, group))
+        added += 1
+
+        if added >= count:
+            break
+
+    return added
+
+
+def select_candidates(messages: list[dict]) -> list[dict]:
+    """Select intent-focused, overlapping, difficult, and random examples."""
+    rng = random.Random(SEED)
     rng.shuffle(messages)
 
     selected = []
     selected_tweet_ids = set()
     selected_conversation_ids = set()
 
-    def add_samples(candidates: list[dict], count: int, group: str) -> None:
-        added = 0
+    def add(candidates: list[dict], count: int, group: str) -> None:
+        add_samples(
+            candidates=candidates,
+            count=count,
+            group=group,
+            selected=selected,
+            selected_tweet_ids=selected_tweet_ids,
+            selected_conversation_ids=selected_conversation_ids,
+        )
 
-        for message in candidates:
-            tweet_id = message["tweet_id"]
-            conversation_id = message["conversation_id"]
-
-            if tweet_id in selected_tweet_ids:
-                continue
-
-            if conversation_id in selected_conversation_ids:
-                continue
-
-            selected_tweet_ids.add(tweet_id)
-            selected_conversation_ids.add(conversation_id)
-
-            selected.append(
-                {
-                    "tweet_id": tweet_id,
-                    "conversation_id": conversation_id,
-                    "turn_index": message["turn_index"],
-                    "created_at": message["created_at"],
-                    "text": message["text"],
-                    "sampling_group": group,
-                    "candidate_intents": "|".join(message["candidate_intents"]),
-                    "intent": "",
-                    "annotation_notes": "",
-                    "escalation_decision": "",
-                    "escalation_reason": "",
-                }
-            )
-
-            added += 1
-
-            if added == count:
-                break
-
-    # Find candidate examples for each existing intent.
+    # Sample messages containing keywords associated with each supported intent.
     for intent in INTENT_KEYWORDS:
         candidates = [
             message for message in messages if intent in message["candidate_intents"]
         ]
-        add_samples(candidates, SAMPLES_PER_INTENT, f"candidate:{intent}")
+        add(candidates, SAMPLES_PER_INTENT, f"candidate:{intent}")
 
-    # Find messages whose wording may match multiple intents.
+    # Messages with keywords associated with multiple intents.
     overlapping = [
         message for message in messages if len(message["candidate_intents"]) >= 2
     ]
-    add_samples(overlapping, MULTI_INTENT_SAMPLES, "multi_intent_candidate")
+    add(overlapping, MULTI_INTENT_SAMPLES, "multi_intent_candidate")
 
-    # Include very short messages and messages with no keyword matches.
+    # Short messages and messages without keyword matches.
     difficult = [
         message
         for message in messages
         if len(message["text"].split()) <= 4 or not message["candidate_intents"]
     ]
-    add_samples(difficult, DIFFICULT_SAMPLES, "short_or_unmatched")
+    add(difficult, DIFFICULT_SAMPLES, "short_or_unmatched")
 
-    # Fill the remaining places with a reproducible random sample.
-    add_samples(messages, TARGET_SIZE - len(selected), "random")
+    # Fill remaining places with other messages.
+    add(messages, TARGET_SIZE - len(selected), "random")
 
-    fields = [
-        "tweet_id",
-        "conversation_id",
-        "turn_index",
-        "created_at",
-        "text",
-        "sampling_group",
-        "candidate_intents",
-        "intent",
-        "annotation_notes",
-        "escalation_decision",
-        "escalation_reason",
-    ]
+    return selected
 
+
+def write_candidates(candidates: list[dict]) -> None:
+    """Write candidate rows to a CSV file."""
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     with OUTPUT_PATH.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fields)
+        writer = csv.DictWriter(file, fieldnames=FIELDS)
         writer.writeheader()
-        writer.writerows(selected)
+        writer.writerows(candidates)
+
+
+def main() -> None:
+    messages = load_messages()
+    prepare_messages(messages)
+    candidates = select_candidates(messages)
+    write_candidates(candidates)
 
     print(f"Customer messages available: {len(messages)}")
-    print(f"Golden-set candidates exported: {len(selected)}")
+    print(f"Golden-set candidates exported: {len(candidates)}")
     print(f"Output: {OUTPUT_PATH.relative_to(ROOT)}")
 
 

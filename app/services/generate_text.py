@@ -7,7 +7,7 @@ load_dotenv()
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 OLLAMA_URL = "http://localhost:11434/api/chat"
-REQUEST_TIMEOUT_SECONDS = 120
+REQUEST_TIMEOUT_SECONDS = 600
 
 
 class LLMService:
@@ -43,7 +43,34 @@ class LLMService:
         if self.provider == "openrouter":
             self.session.headers["Authorization"] = f"Bearer {self.api_key}"
 
-    def generate_completion(self, message: list[dict[str, str]]) -> str:
+    @staticmethod
+    def print_ollama_metrics(result: dict) -> None:
+        duration_keys = (
+            "load_duration",
+            "prompt_eval_duration",
+            "eval_duration",
+            "total_duration",
+        )
+
+        metrics = {
+            key: (
+                round(result[key] / 1_000_000_000, 3)
+                if isinstance(result.get(key), (int, float))
+                else None
+            )
+            for key in duration_keys
+        }
+
+        metrics["prompt_eval_count"] = result.get("prompt_eval_count")
+        metrics["eval_count"] = result.get("eval_count")
+
+        print(f"Ollama metrics: {metrics}")
+
+    def generate_completion(
+        self,
+        message: list[dict[str, str]],
+        response_format: str | dict = "json",
+    ) -> str:
         if not message:
             raise ValueError("message is empty")
 
@@ -53,12 +80,18 @@ class LLMService:
                 "messages": message,
                 "stream": False,
                 "think": False,
-                "format": "json",
-                "options": {"temperature": 0},
+                "format": response_format,
+                "keep_alive": "30m",
+                "options": {
+                    "temperature": 0,
+                },
             }
             url = OLLAMA_URL
         else:
-            payload = {"model": self.model, "messages": message}
+            payload = {
+                "model": self.model,
+                "messages": message,
+            }
             url = OPENROUTER_URL
 
         try:
@@ -76,6 +109,9 @@ class LLMService:
 
         if self.provider == "ollama":
             content = result.get("message", {}).get("content")
+
+            # Ollama reports timing metrics in nanoseconds.
+            LLMService.print_ollama_metrics(result)
         else:
             choices = result.get("choices", [])
             content = choices[0].get("message", {}).get("content") if choices else None
