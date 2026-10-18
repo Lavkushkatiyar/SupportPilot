@@ -5,7 +5,7 @@ from app.schemas.intent import IntentLabel
 
 ALLOWED_INTENT = [intent.value for intent in IntentLabel]
 
-PROMPT_FILE = Path(__file__).with_name("intent_prompt.txt")
+PROMPT_FILE = Path(__file__).resolve().parents[2] / "data" / "intent_prompt.txt"
 
 
 def load_system_prompt() -> str:
