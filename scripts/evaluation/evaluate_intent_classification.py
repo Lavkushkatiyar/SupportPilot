@@ -6,7 +6,7 @@ from app.services.intent_classifier import IntentClassifier
 
 ROOT = Path(__file__).resolve().parents[2]
 
-GOLDEN_SET_PATH = ROOT / "data/evaluation/golden_set_annotations.csv"
+GOLDEN_SET_PATH = ROOT / "data/evaluation/golden_set_annotations_v3.csv"
 
 
 def load_golden_set() -> pl.DataFrame:

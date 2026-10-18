@@ -5,7 +5,7 @@ import polars as pl
 ROOT = Path(__file__).resolve().parents[2]
 
 PREDICTIONS_PATH = ROOT / "data/evaluation/intent_predictions.csv"
-GOLDEN_SET_PATH = ROOT / "data/evaluation/golden_set_annotations.csv"
+GOLDEN_SET_PATH = ROOT / "data/evaluation/golden_set_annotations_v3.csv"
 MISMATCHES_PATH = ROOT / "data/evaluation/prediction_mismatches.csv"
 
 
@@ -18,7 +18,7 @@ def main():
         "tweet_id",
         "text",
         "intent",
-        "annotation_notes",
+        "annotation_rationale",
         "annotation_confidence",
         "review_status",
     ]
@@ -46,7 +46,7 @@ def main():
             "tweet_id",
             "text",
             pl.col("intent").alias("golden_set_intent"),
-            "annotation_notes",
+            "annotation_rationale",
             "annotation_confidence",
             "review_status",
             pl.col("predicted_intent").alias("classifier_intent"),
