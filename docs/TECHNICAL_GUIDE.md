@@ -16,13 +16,19 @@ need evidence. The project overview and quick demo are in the [README]\(../READM
 
 SupportPilot is an experimental support-agent backend for Apple Support-style
 
-messages. The FastAPI endpoint classifies a message using an OpenRouter chat
+messages. The current documented request path classifies a message using an
 
-completion, applies deterministic escalation rules, and, when the rules allow
+OpenRouter chat completion, applies deterministic escalation rules, and, when
 
-auto-handling, retrieves similar cases from PostgreSQL/pgvector and asks the
+the rules allow auto-handling, retrieves similar cases from PostgreSQL/pgvector
 
-configured chat model to draft a reply.
+and asks the configured chat model to draft a reply. Ollama with the local
+
+`qwen3:8b` model is the intended fallback provider, but automatic provider
+
+failover must not be considered active until the Ollama adapter and fallback
+
+routing are integrated and tested.
 
 
 
@@ -80,6 +86,8 @@ represent official Apple policies.
 
 \| OpenRouter | Chat-completion endpoint used for intent classification and customer-facing draft text. | \`app/services/generate_text.py\` reads \`OPENROUTER_API_KEY\` and \`MODEL\`. The error message names \`OPENROUTER_MODEL\` for the latter, but the implementation reads \`MODEL\`. Requests have a 30-second timeout. |
 
+\| Ollama + Qwen3:8b | Local LLM option intended as a fallback for hosted model calls. | Ollama must be running on a host reachable by the API process, and the application needs an Ollama-compatible provider adapter and explicit fallback routing. A direct Ollama request was tested, but Python service integration/failover must be re-tested before deployment. |
+
 \| Polars | Reads the source CSV, processes conversations, and reads/writes Parquet. | Use the scripts under \`scripts/dataset/\` and \`scripts/db_load/\`. The full raw CSV is large; use the loader's \`--limit\` for a small DB load after processing. |
 
 \| Docker Compose | Local PostgreSQL/pgvector and Redis services. | Start with \`./dev.sh infra\` or \`docker compose up -d postgres redis\`. Set \`POSTGRES_PASSWORD\` in local configuration; it is not present in \`.env.example\`. |
@@ -95,6 +103,41 @@ represent official Apple policies.
 No separate LLM framework or evaluation package is configured in the dependency
 
 manifest.
+
+**### Local LLM fallback: Ollama + Qwen3:8b**
+
+The intended provider arrangement is OpenRouter as the primary hosted provider and
+Ollama running `qwen3:8b` on our own machine/server as the fallback. Ollama serves
+the model through its local HTTP API; the FastAPI process must be able to reach
+that endpoint. If the API is deployed remotely while Ollama remains on a developer
+laptop, the deployed service will not be able to reach `localhost` on that laptop.
+For a remote deployment, run Ollama on the same host/network as the API or expose
+it through a private, access-controlled network. Do not expose an unauthenticated
+Ollama endpoint publicly.
+
+**Current implementation boundary:** the inspected `LLMService` path initializes
+OpenRouter from `OPENROUTER_API_KEY` and `MODEL`. Installing Ollama and pulling
+`qwen3:8b` does not by itself enable fallback. The service needs a provider adapter
+that sends compatible chat requests to Ollama, plus explicit routing that selects
+Ollama when the primary provider fails. The direct Ollama model request was tested,
+but the Python service integration/failover still requires verification. Until
+that test passes, describe Ollama as the planned local fallback—not as automatic
+failover already available in production.
+
+**Verification checklist**
+
+1. Confirm the model is installed with `ollama list` and responds to `ollama run qwen3:8b`.
+2. Confirm the FastAPI runtime can reach the Ollama HTTP endpoint; `localhost` means
+   the current runtime/container, not another computer.
+3. Test both intent-classification and response-drafting prompts through the actual
+   Python provider adapter, including schema/JSON validation.
+4. Simulate an OpenRouter timeout or provider error and verify that fallback is
+   attempted only for appropriate transient failures.
+5. Verify that invalid model output still fails safely and that deterministic
+   escalation rules, retrieval context, authentication, and rate limiting remain
+   unchanged.
+6. Log which provider handled a request, without logging API keys or sensitive
+   customer content.
 
 
 
@@ -805,6 +848,8 @@ presented as a benchmark. Do not present it as end-to-end response accuracy.
 \| \`/ready\` returns ready but dependencies are unavailable | This route is static and does not perform readiness checks. Verify PostgreSQL/Redis separately. |
 
 \| LLM initialization fails | Set \`OPENROUTER_API_KEY\` and \`MODEL\` in the private environment. The implementation reads \`MODEL\` although the missing-setting message refers to \`OPENROUTER_MODEL\`. |
+
+\| Ollama fallback is unavailable | Confirm Ollama is running, `qwen3:8b` is installed, and the API process can reach the Ollama endpoint. Verify the provider adapter and fallback routing; installing the model alone does not activate failover. |
 
 \| First vector operation is slow or fails offline | The Sentence Transformers model may need to be downloaded and cached. |
 

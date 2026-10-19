@@ -1,14 +1,14 @@
 from app.schemas.intent import IntentClassification
-from app.services.ai.generate_text import LLMService
 from app.services.ai.get_prompt import SYSTEM_PROMPT
+from app.services.ai.llm_factory import get_llm_service
 
 
 class IntentClassifier:
     def __init__(self) -> None:
-        self.llm_service = LLMService()
+        self.llm_service = get_llm_service()
 
     def classify(self, customer_message: str) -> IntentClassification:
-        print(customer_message)
+        print("classifying the intent of message -> ", customer_message)
         messages = [
             {
                 "role": "system",

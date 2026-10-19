@@ -5,6 +5,7 @@ from app.schemas.intent import IntentClassification, IntentLabel
 class EscalationService:
     @staticmethod
     def decide(classification: IntentClassification) -> EscalationDecision:
+        print("Escalation service in Action")
         if classification.intent == IntentLabel.UNKNOWN_OR_INSUFFICIENT_CONTEXT:
             return EscalationDecision(
                 action=EscalationAction.ESCALATE,

@@ -26,6 +26,7 @@ SupportPilot brings together a Python API, a retrieval-backed data layer, and an
 - **PostgreSQL + pgvector** — persistence and vector similarity search over embedded support cases.
 - **Sentence Transformers** — generation of text embeddings for semantic retrieval.
 - **OpenRouter** — access to hosted language models for intent and response-generation tasks.
+- **Ollama + Qwen3:8b** — a locally hosted model option intended as a fallback when the hosted provider is unavailable.
 - **Redis** — support for rate limiting and shared short-lived state.
 - **Docker Compose** — local service orchestration for development.
 - **uv** — Python dependency and environment management.
@@ -33,6 +34,24 @@ SupportPilot brings together a Python API, a retrieval-backed data layer, and an
 - **Bruno** — API request collections for manual endpoint testing.
 
 The stack separates responsibilities: the API validates and coordinates requests, PostgreSQL stores application and historical-case data, vector search finds semantically related cases, and the language model uses the resulting context to help prepare a response. The escalation layer provides a separate decision point instead of treating every incoming message as suitable for automatic handling.
+
+### Local LLM fallback: Ollama + Qwen3:8b
+
+SupportPilot has a local-model fallback option available on our own machine/server: **Ollama running `qwen3:8b`**. Keeping a model locally can reduce dependence on a hosted LLM provider and lets the application route model requests to our own Ollama instance when that path is configured. The same classification, escalation, retrieval, and response-drafting workflow should remain in place; changing the model provider should not bypass those controls.
+
+**Deployment note:** the current documented service path uses OpenRouter. Do not assume automatic failover is active merely because Ollama and `qwen3:8b` are installed. The Ollama provider must be wired into the application's LLM service and tested before it can be described as automatic fallback. Keep OpenRouter as the primary provider and Ollama as the local fallback target until that integration is verified.
+
+---
+
+## Current evaluation snapshot
+
+- **Intent classification: 85%+ accuracy** in the current project evaluation.
+- This figure refers to intent-label prediction only. It must not be interpreted
+  as 85%+ correctness for generated replies, retrieval relevance, escalation
+  decisions, or the complete support workflow.
+- Results depend on the evaluation dataset, label definitions, and review
+  process. The metric should be reported alongside the evaluation-set size,
+  class-level results, and known limitations when those results are published.
 
 ---
 
@@ -74,8 +93,9 @@ be handled automatically or escalated to a human.
 The system combines language-model reasoning with conventional backend
 engineering: a versioned HTTP API, typed data contracts, relational
 persistence, vector similarity search, deterministic escalation rules,
-authentication utilities, rate limiting, and a repeatable local
-development environment.
+authenticated API access, Redis-backed rate limiting, and a repeatable local
+development environment. Company-aware authorization and tenant isolation
+remain planned work for supporting multiple companies.
 
 > **Important boundary:** SupportPilot produces a response draft; it
 > does not send replies or take actions on an Apple account. Historical
@@ -203,20 +223,27 @@ keeping database structure distinct from API contracts.
 from leaking into the public API and make validation behavior easier to
 document and test.
 
-### 9. Authentication and rate limiting
+### 9. Authentication, authorization, and rate limiting
 
-The project includes user registration and login endpoints, JWT-related
-security utilities, and Redis-backed rate limiting for authentication
-requests.
+SupportPilot uses authenticated access and Redis-backed rate limiting across
+its API routes. Registration and login provide the entry points for obtaining
+credentials; protected application requests must present valid authentication
+credentials.
 
-**Why it matters:** Authentication and request throttling are important
-backend concerns even in an AI-focused project. Redis provides a shared,
-fast store for rate-limit state instead of relying only on process-local
-memory.
+**Why it matters:** Rate limiting constrains repeated requests and helps
+protect the API and paid LLM calls from abuse. Authentication establishes
+which user is making a request. Authorization determines what that user is
+allowed to access; these are separate controls and both matter when support
+data is involved.
 
-The support endpoint should have appropriate authentication and
-authorization applied before the service is exposed to real users or
-customer data.
+**Next step: company-aware authorization.** The source Kaggle dataset includes
+support conversations from multiple companies, while the current prototype is
+focused on Apple Support. To support other companies safely, the authentication
+model needs to evolve from identifying a user alone to associating users with
+a company or tenant. Requests and historical-case retrieval must then be scoped
+to the authenticated company's data. This tenant-aware design is planned work,
+not a capability to claim as complete until membership checks and data isolation
+are implemented and tested.
 
 ### 10. Dataset processing and ingestion
 
