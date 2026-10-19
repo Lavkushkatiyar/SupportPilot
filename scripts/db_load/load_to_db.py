@@ -13,6 +13,7 @@ DEFAULT_DATASET = Path("data/processed/apple_support_conversations.parquet")
 
 
 def load_dataset(dataset_path: Path, limit: int) -> pl.DataFrame:
+    print(dataset_path, limit)
     return (
         pl.scan_parquet(dataset_path)
         .select(
@@ -136,18 +137,19 @@ def main() -> None:
 
     if args.limit <= 0:
         raise ValueError("--limit must be greater than zero.")
+    for num in range(1000, args.limit, 1000):
+        print("came here ")
+        df = load_dataset(args.dataset, num)
 
-    df = load_dataset(args.dataset, args.limit)
+        if df.is_empty():
+            raise ValueError("The processed dataset contains no records.")
 
-    if df.is_empty():
-        raise ValueError("The processed dataset contains no records.")
+        insert_data(df)
 
-    insert_data(df)
-
-    print(
-        f"Loaded {len(df)} messages from "
-        f"{df['conversation_id'].n_unique()} conversations."
-    )
+        print(
+            f"Loaded {len(df)} messages from "
+            f"{df['conversation_id'].n_unique()} conversations."
+        )
 
 
 if __name__ == "__main__":
