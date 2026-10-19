@@ -5,7 +5,7 @@ from app.api.rate_limit import rate_limit
 from app.db.session import get_db
 from app.schemas.customer_request import CustomerSupportRequest
 from app.schemas.customer_support_orchestrator import OrchestratorResponse
-from app.services.customer_support_orchestrator import (
+from app.services.response_pipeline.customer_support_orchestrator import (
     CustomerSupportOrchestrator,
 )
 

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 
 from app.models.historical_case import HistoricalCase
-from app.services.generate_text import LLMService
-from app.services.retrieval import RetrievalServices
+from app.services.ai.generate_text import LLMService
+from app.services.retrieval.retrieval import RetrievalServices
 
 
 class CustomerResponseGenerator:

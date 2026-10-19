@@ -1,6 +1,6 @@
 from app.schemas.intent import IntentClassification
-from app.services.generate_text import LLMService
-from app.services.get_prompt import SYSTEM_PROMPT
+from app.services.ai.generate_text import LLMService
+from app.services.ai.get_prompt import SYSTEM_PROMPT
 
 
 class IntentClassifier:

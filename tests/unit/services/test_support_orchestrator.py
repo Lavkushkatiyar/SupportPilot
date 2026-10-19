@@ -1,7 +1,11 @@
 from unittest.mock import MagicMock, patch
 
 from app.schemas.escalation import EscalationAction
-from app.services.customer_support_orchestrator import CustomerSupportOrchestrator
+from app.services.response_pipeline.customer_support_orchestrator import (
+    CustomerSupportOrchestrator,
+)
+
+MODULE_PATH = "app.services.response_pipeline.customer_support_orchestrator"
 
 
 def test_process_customer_message_auto_handles_request():
@@ -17,19 +21,13 @@ def test_process_customer_message_auto_handles_request():
     draft_response = "Your order is currently being processed."
 
     with (
+        patch(f"{MODULE_PATH}.IntentClassifier") as mock_classifier_class,
+        patch(f"{MODULE_PATH}.CustomerResponseGenerator") as mock_generator_class,
         patch(
-            "app.services.customer_support_orchestrator.IntentClassifier"
-        ) as mock_classifier_class,
-        patch(
-            "app.services.customer_support_orchestrator.CustomerResponseGenerator"
-        ) as mock_generator_class,
-        patch(
-            "app.services.customer_support_orchestrator.EscalationService.decide",
+            f"{MODULE_PATH}.EscalationService.decide",
             return_value=escalation,
         ) as mock_decide,
-        patch(
-            "app.services.customer_support_orchestrator.OrchestratorResponse"
-        ) as mock_response_class,
+        patch(f"{MODULE_PATH}.OrchestratorResponse") as mock_response_class,
     ):
         mock_classifier_class.return_value.classify.return_value = classification
         mock_generator_class.return_value.generate_response.return_value = (
@@ -38,20 +36,20 @@ def test_process_customer_message_auto_handles_request():
 
         orchestrator = CustomerSupportOrchestrator()
 
-        result = orchestrator.process_customer_message(session, customer_message)
+        result = orchestrator.process_customer_message(
+            session,
+            customer_message,
+        )
 
         mock_classifier_class.return_value.classify.assert_called_once_with(
             customer_message
         )
-
         mock_decide.assert_called_once_with(classification)
-
         mock_generator_class.return_value.generate_response.assert_called_once_with(
             session,
             customer_message,
             classification.intent.value,
         )
-
         mock_response_class.assert_called_once_with(
             classification=classification,
             escalation=escalation,
@@ -74,34 +72,28 @@ def test_process_customer_message_does_not_generate_response_when_escalation_req
     )
 
     with (
+        patch(f"{MODULE_PATH}.IntentClassifier") as mock_classifier_class,
+        patch(f"{MODULE_PATH}.CustomerResponseGenerator") as mock_generator_class,
         patch(
-            "app.services.customer_support_orchestrator.IntentClassifier"
-        ) as mock_classifier_class,
-        patch(
-            "app.services.customer_support_orchestrator.CustomerResponseGenerator"
-        ) as mock_generator_class,
-        patch(
-            "app.services.customer_support_orchestrator.EscalationService.decide",
+            f"{MODULE_PATH}.EscalationService.decide",
             return_value=escalation,
         ) as mock_decide,
-        patch(
-            "app.services.customer_support_orchestrator.OrchestratorResponse"
-        ) as mock_response_class,
+        patch(f"{MODULE_PATH}.OrchestratorResponse") as mock_response_class,
     ):
         mock_classifier_class.return_value.classify.return_value = classification
 
         orchestrator = CustomerSupportOrchestrator()
 
-        result = orchestrator.process_customer_message(session, customer_message)
+        result = orchestrator.process_customer_message(
+            session,
+            customer_message,
+        )
 
         mock_classifier_class.return_value.classify.assert_called_once_with(
             customer_message
         )
-
         mock_decide.assert_called_once_with(classification)
-
         mock_generator_class.return_value.generate_response.assert_not_called()
-
         mock_response_class.assert_called_once_with(
             classification=classification,
             escalation=escalation,
