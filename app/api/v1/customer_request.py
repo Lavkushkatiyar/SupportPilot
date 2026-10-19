@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.rate_limit import rate_limit
+from app.api.rate_limit import user_rate_limit
 from app.db.session import get_db
 from app.schemas.customer_request import CustomerSupportRequest
 from app.schemas.customer_support_orchestrator import OrchestratorResponse
@@ -10,7 +10,7 @@ from app.services.response_pipeline.customer_support_orchestrator import (
 )
 
 router = APIRouter(
-    dependencies=[Depends(rate_limit)], prefix="/support", tags=["Support"]
+    dependencies=[Depends(user_rate_limit)], prefix="/support", tags=["Support"]
 )
 
 
