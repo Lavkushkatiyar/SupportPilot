@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
 
 from app.models.historical_case import HistoricalCase
-from app.services.ai.generate_text import LLMService
+from app.services.ai.llm_factory import get_llm_service
 from app.services.retrieval.retrieval import RetrievalServices
 
 
 class CustomerResponseGenerator:
     def __init__(self) -> None:
-        self.llm_service = LLMService()
+        self.llm_service = get_llm_service()
 
     def generate_response(
         self,
@@ -16,6 +16,7 @@ class CustomerResponseGenerator:
         intent: str,
         retrieval_limit: int = 5,
     ) -> str:
+        print("similar Historical Cases Retrieval started")
         historical_cases = RetrievalServices.retrieve_similar_cases(
             session=session,
             customer_message=customer_message,
@@ -23,6 +24,7 @@ class CustomerResponseGenerator:
         )
 
         historical_context = self._format_historical_cases(historical_cases)
+        print("historcial context ", historical_context)
 
         messages = [
             {
